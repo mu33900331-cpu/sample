@@ -1,0 +1,403 @@
+:root {
+    --bg-color: #121212;
+    --glass-bg: rgba(255, 255, 255, 0.1);
+    --glass-border: rgba(255, 255, 255, 0.2);
+    --text-color: #ffffff;
+    --accent-color: #00f2ea;
+
+    /* Ball Colors */
+    --color-1: #ff0055;
+    /* Red/Pink */
+    --color-2: #00f2ea;
+    /* Cyan */
+    --color-3: #ffd500;
+    /* Yellow */
+    --color-4: #00ff66;
+    /* Green */
+
+    --cell-size: 30px;
+    /* Base size, will scale */
+    --grid-cols: 6;
+    --grid-rows: 12;
+}
+
+* {
+    box-sizing: border-box;
+    margin: 0;
+    padding: 0;
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+}
+
+body {
+    background-color: var(--bg-color);
+    color: var(--text-color);
+    height: 100vh;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    overflow: hidden;
+    background: radial-gradient(circle at 50% 50%, #1a1a2e, #000000);
+}
+
+.app-container {
+    display: flex;
+    gap: 20px;
+    padding: 20px;
+    max-width: 800px;
+    width: 100%;
+    justify-content: center;
+    align-items: flex-start;
+}
+
+.glass-panel {
+    background: var(--glass-bg);
+    backdrop-filter: blur(10px);
+    -webkit-backdrop-filter: blur(10px);
+    border: 1px solid var(--glass-border);
+    border-radius: 15px;
+    box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.37);
+    padding: 15px;
+    text-align: center;
+}
+
+/* Sidebar Styles */
+.sidebar {
+    display: flex;
+    flex-direction: column;
+    gap: 15px;
+    width: 150px;
+}
+
+.score-panel h2,
+.level-panel h2,
+.next-panel h2 {
+    font-size: 1.2rem;
+    margin-bottom: 5px;
+    color: var(--accent-color);
+    text-shadow: 0 0 5px var(--accent-color);
+}
+
+#score-display,
+#level-display {
+    font-size: 1.5rem;
+    font-weight: bold;
+}
+
+.controls-hint {
+    font-size: 0.8rem;
+    opacity: 0.7;
+    margin-top: 20px;
+    text-align: center;
+}
+
+/* Game Board */
+.game-container {
+    position: relative;
+}
+
+.game-board {
+    width: calc(var(--cell-size) * var(--grid-cols) + 2px);
+    /* +2 for borders if needed */
+    height: calc(var(--cell-size) * var(--grid-rows) + 2px);
+    display: grid;
+    grid-template-columns: repeat(var(--grid-cols), var(--cell-size));
+    grid-template-rows: repeat(var(--grid-rows), var(--cell-size));
+    gap: 0;
+    /* No gap for connecting balls */
+    padding: 5px;
+    /* Inner padding */
+    box-sizing: content-box;
+}
+
+.cell {
+    width: var(--cell-size);
+    height: var(--cell-size);
+    border: 1px solid rgba(255, 255, 255, 0.05);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+}
+
+.ball {
+    width: 90%;
+    height: 90%;
+    border-radius: 50%;
+    box-shadow: inset -2px -2px 6px rgba(0, 0, 0, 0.3), 0 0 5px currentColor;
+    transition: transform 0.1s;
+}
+
+/* 消去アニメーション */
+@keyframes pop {
+    0% {
+        transform: scale(1);
+        opacity: 1;
+    }
+
+    50% {
+        transform: scale(1.4);
+        opacity: 0.7;
+    }
+
+    100% {
+        transform: scale(0);
+        opacity: 0;
+    }
+}
+
+.ball.pop {
+    animation: pop 0.35s ease-out forwards;
+}
+
+.ball.type-1 {
+    background-color: var(--color-1);
+    color: var(--color-1);
+}
+
+.ball.type-2 {
+    background-color: var(--color-2);
+    color: var(--color-2);
+}
+
+.ball.type-3 {
+    background-color: var(--color-3);
+    color: var(--color-3);
+}
+
+.ball.type-4 {
+    background-color: var(--color-4);
+    color: var(--color-4);
+}
+
+/* Next Piece Preview */
+.next-piece-container {
+    margin: 10px auto;
+    width: var(--cell-size);
+    height: calc(var(--cell-size) * 2);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 2px;
+}
+
+.next-piece-container .ball {
+    width: var(--cell-size);
+    height: var(--cell-size);
+    flex-shrink: 0;
+}
+
+.next-piece-container.small {
+    transform: scale(0.8);
+    opacity: 0.7;
+}
+
+/* Overlay */
+.overlay {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0, 0, 0, 0.85);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    border-radius: 15px;
+    z-index: 10;
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.3s;
+}
+
+.overlay.active {
+    opacity: 1;
+    pointer-events: all;
+}
+
+.overlay-content {
+    text-align: center;
+    color: white;
+}
+
+.overlay h1 {
+    font-size: 2.5rem;
+    margin-bottom: 20px;
+    color: var(--accent-color);
+    text-transform: uppercase;
+    text-shadow: 0 0 10px var(--accent-color);
+}
+
+.overlay p {
+    font-size: 1.2rem;
+    animation: blink 1.5s infinite;
+}
+
+@keyframes blink {
+
+    0%,
+    100% {
+        opacity: 1;
+    }
+
+    50% {
+        opacity: 0.5;
+    }
+}
+
+@media (min-height: 800px) {
+    :root {
+        --cell-size: 40px;
+    }
+}
+
+/* ===== スマホ用 仮想コントローラー ===== */
+.touch-controls {
+    position: fixed;
+    bottom: 0;
+    left: 0;
+    width: 100%;
+    padding: 10px 16px 16px;
+    display: none;
+    /* デフォルトは非表示 */
+    flex-direction: column;
+    gap: 8px;
+    background: rgba(0, 0, 0, 0.5);
+    backdrop-filter: blur(6px);
+    z-index: 100;
+}
+
+.touch-row {
+    display: flex;
+    justify-content: center;
+    gap: 12px;
+}
+
+.touch-btn {
+    width: 64px;
+    height: 64px;
+    border-radius: 50%;
+    border: 2px solid var(--glass-border);
+    background: var(--glass-bg);
+    color: var(--text-color);
+    font-size: 1.4rem;
+    cursor: pointer;
+    user-select: none;
+    -webkit-user-select: none;
+    touch-action: none;
+    transition: background 0.1s, transform 0.1s;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.touch-btn:active {
+    background: rgba(0, 242, 234, 0.3);
+    transform: scale(0.92);
+}
+
+.btn-drop {
+    background: rgba(0, 242, 234, 0.15);
+    border-color: var(--accent-color);
+    color: var(--accent-color);
+    font-size: 1rem;
+    font-weight: bold;
+}
+
+.btn-pause {
+    background: rgba(255, 255, 255, 0.1);
+}
+
+/* body にスクロール余白を確保 */
+body.touch-ui {
+    padding-bottom: 160px;
+    overflow-y: auto;
+    align-items: flex-start;
+    padding-top: 16px;
+}
+
+/* タッチデバイスの場合には仮想コントローラーを表示 */
+@media (pointer: coarse) {
+    .touch-controls {
+        display: flex;
+    }
+
+    .controls-hint {
+        display: none;
+    }
+}
+
+/*
+ * ===== スマホ縦向きレスポンシブレイアウト =====
+ * 問題の原因：
+ *   左サイドバー(80px) + gap(20px) + ゲームボード(192px) + gap(20px) + 右サイドバー(80px)
+ *   + padding(40px) = 432px → iPhone画面幅(375〜390px)を超えてはみ出し、
+ *   body の overflow:hidden によりゲームボードが完全に隠れていた。
+ * 修正：縦並びレイアウトでサイドバーを上下の帯に変換する。
+ */
+@media (max-width: 520px) {
+    :root {
+        /* 6列 × 40px = 240px → 余裕を持って画面内に収まる */
+        --cell-size: 40px;
+    }
+
+    body {
+        /* overflow:hidden を解除してスクロールを許可 */
+        overflow-x: hidden;
+        overflow-y: auto;
+        align-items: flex-start;
+        height: auto;
+        min-height: 100vh;
+        /* タッチコントローラー分の余白 */
+        padding-bottom: 170px;
+    }
+
+    /* 縦並びに変更してゲームボードを中央に配置 */
+    .app-container {
+        flex-direction: column;
+        align-items: center;
+        gap: 8px;
+        padding: 8px;
+    }
+
+    /* 左サイドバー（スコア・レベル）を横帯として上部に表示 */
+    .left-sidebar {
+        width: 100%;
+        max-width: calc(var(--cell-size) * 6 + 12px);
+        flex-direction: row;
+        justify-content: center;
+        gap: 12px;
+    }
+
+    .score-panel,
+    .level-panel {
+        flex: 1;
+        padding: 8px 12px;
+    }
+
+    /* 右サイドバー（NEXT）を横帯として下部に表示 */
+    .right-sidebar {
+        width: 100%;
+        max-width: calc(var(--cell-size) * 6 + 12px);
+    }
+
+    .next-panel {
+        display: flex;
+        flex-direction: row;
+        align-items: center;
+        justify-content: center;
+        gap: 20px;
+        padding: 8px 15px;
+    }
+
+    .next-panel h2 {
+        margin-bottom: 0;
+    }
+
+    .next-piece-container {
+        margin: 0;
+    }
+
+    /* サイドバーの幅指定を上書き（横帯モードでは不要） */
+    .sidebar {
+        width: auto;
+    }
+}

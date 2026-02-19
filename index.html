@@ -1,0 +1,84 @@
+<!DOCTYPE html>
+<html lang="ja">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+    <title>Neon Drop Puzzle</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+
+<body>
+    <div class="background-animation"></div>
+
+    <div class="app-container">
+        <!-- 左サイドバー -->
+        <div class="sidebar left-sidebar">
+            <div class="glass-panel score-panel">
+                <h2>SCORE</h2>
+                <div id="score-display">0</div>
+            </div>
+            <div class="glass-panel level-panel">
+                <h2>LEVEL</h2>
+                <div id="level-display">1</div>
+            </div>
+            <div class="controls-hint">
+                <p>← → : 移動</p>
+                <p>↑ : 回転</p>
+                <p>↓ : 下移動</p>
+                <p>SPACE : 急落下</p>
+                <p>P / ESC : 一時停止</p>
+            </div>
+        </div>
+
+        <!-- ゲームエリア -->
+        <div class="game-container">
+            <div class="glass-panel game-board" id="game-board">
+                <!-- グリッドセルはJSが生成 -->
+            </div>
+
+            <!-- スタート / ゲームオーバー オーバーレイ -->
+            <div id="overlay" class="overlay active">
+                <div class="overlay-content">
+                    <h1 id="overlay-title">NEON DROP</h1>
+                    <p id="overlay-sub">SPACE でスタート</p>
+                </div>
+            </div>
+
+            <!-- 一時停止 オーバーレイ -->
+            <div id="pause-overlay" class="overlay">
+                <div class="overlay-content">
+                    <h1>PAUSED</h1>
+                    <p>P / ESC で再開</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- 右サイドバー：ネクストピース -->
+        <div class="sidebar right-sidebar">
+            <div class="glass-panel next-panel">
+                <h2>NEXT</h2>
+                <div class="next-piece-container" id="next-1"></div>
+                <div class="next-piece-container small" id="next-2"></div>
+            </div>
+        </div>
+    </div>
+
+    <!-- スマホ用 仮想コントローラー -->
+    <div class="touch-controls">
+        <div class="touch-row">
+            <button id="btn-pause" class="touch-btn btn-pause" aria-label="一時停止">⏸</button>
+            <button id="btn-rotate" class="touch-btn btn-rotate" aria-label="回転">↺</button>
+            <button id="btn-drop" class="touch-btn btn-drop" aria-label="急落下">⬇⬇</button>
+        </div>
+        <div class="touch-row">
+            <button id="btn-left" class="touch-btn btn-move" aria-label="左移動">◀</button>
+            <button id="btn-down" class="touch-btn btn-move" aria-label="下移動">▼</button>
+            <button id="btn-right" class="touch-btn btn-move" aria-label="右移動">▶</button>
+        </div>
+    </div>
+
+    <script src="script.js"></script>
+</body>
+
+</html>
