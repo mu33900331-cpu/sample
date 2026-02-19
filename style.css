@@ -126,6 +126,13 @@ body {
     transition: transform 0.1s;
 }
 
+.ball.ghost {
+    opacity: 0.35;
+    transform: scale(0.85);
+    box-shadow: none;
+    border: 1px dashed rgba(255, 255, 255, 0.5);
+}
+
 /* 消去アニメーション */
 @keyframes pop {
     0% {
@@ -249,70 +256,126 @@ body {
     }
 }
 
-/* ===== スマホ用 仮想コントローラー ===== */
+/* ===== スマホ用 モダン・仮想コントローラー ===== */
 .touch-controls {
     position: fixed;
     bottom: 0;
     left: 0;
     width: 100%;
-    padding: 10px 16px 16px;
+    padding: 12px 14px 24px;
     display: none;
-    /* デフォルトは非表示 */
     flex-direction: column;
-    gap: 8px;
-    background: rgba(0, 0, 0, 0.5);
-    backdrop-filter: blur(6px);
+    gap: 12px;
+    background: linear-gradient(to top, rgba(0, 0, 0, 0.8), rgba(0, 0, 0, 0.45));
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
     z-index: 100;
+    border-top: 1px solid rgba(255, 255, 255, 0.1);
 }
 
-.touch-row {
+.control-group {
     display: flex;
     justify-content: center;
-    gap: 12px;
+    align-items: center;
+    width: 100%;
 }
 
-.touch-btn {
-    width: 64px;
-    height: 64px;
-    border-radius: 50%;
-    border: 2px solid var(--glass-border);
-    background: var(--glass-bg);
+.top-row {
+    gap: 15px;
+    padding: 0 10%;
+}
+
+.bottom-row {
+    justify-content: space-between;
+    gap: 10px;
+}
+
+.move-btns {
+    display: flex;
+    gap: 10px;
+}
+
+/* モダンなボタンの共通スタイル */
+.modern-btn {
+    border: 1px solid rgba(255, 255, 255, 0.15);
+    background: rgba(40, 44, 52, 0.6);
     color: var(--text-color);
-    font-size: 1.4rem;
+    border-radius: 12px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: 600;
     cursor: pointer;
     user-select: none;
     -webkit-user-select: none;
     touch-action: none;
-    transition: background 0.1s, transform 0.1s;
-    display: flex;
-    align-items: center;
-    justify-content: center;
+    transition: all 0.15s cubic-bezier(0.4, 0, 0.2, 1);
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.4);
+    position: relative;
+    overflow: hidden;
 }
 
-.touch-btn:active {
-    background: rgba(0, 242, 234, 0.3);
+.modern-btn:active {
     transform: scale(0.92);
+    background: rgba(255, 255, 255, 0.25);
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.6);
 }
 
-.btn-drop {
-    background: rgba(0, 242, 234, 0.15);
-    border-color: var(--accent-color);
+.modern-btn span {
+    font-size: 0.75rem;
+    letter-spacing: 0.05em;
+}
+
+.modern-btn i.icon {
+    font-size: 1.6rem;
+    font-style: normal;
+}
+
+/* ボタンバリエーション */
+.btn-util {
+    width: 100px;
+    height: 38px;
+    background: rgba(255, 255, 255, 0.08);
+}
+
+.btn-drop-hard {
+    flex: 1;
+    height: 38px;
+    background: linear-gradient(45deg, rgba(255, 0, 85, 0.2), rgba(0, 242, 234, 0.2));
+    border-color: rgba(0, 242, 234, 0.3);
     color: var(--accent-color);
-    font-size: 1rem;
-    font-weight: bold;
 }
 
-.btn-pause {
-    background: rgba(255, 255, 255, 0.1);
+.btn-move {
+    width: 58px;
+    height: 58px;
+    border-radius: 50%;
+    font-size: 1.2rem;
 }
 
-/* body にスクロール余白を確保 */
+.btn-action {
+    width: 70px;
+    height: 70px;
+    border-radius: 18px;
+    background: rgba(0, 242, 234, 0.12);
+    border-color: rgba(0, 242, 234, 0.4);
+    color: var(--accent-color);
+    box-shadow: 0 0 15px rgba(0, 242, 234, 0.2);
+}
+
+#btn-rotate-left {
+    border-radius: 18px 8px 8px 18px;
+}
+
+#btn-rotate-right {
+    border-radius: 8px 18px 18px 8px;
+}
+
+/* body にスクロール余白を確保 (PC版との互換用) */
 body.touch-ui {
-    padding-bottom: 160px;
-    overflow-y: auto;
-    align-items: flex-start;
-    padding-top: 16px;
+    padding-bottom: 0px;
 }
+
 
 /* タッチデバイスの場合には仮想コントローラーを表示 */
 @media (pointer: coarse) {

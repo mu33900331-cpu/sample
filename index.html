@@ -66,15 +66,18 @@
 
     <!-- スマホ用 仮想コントローラー -->
     <div class="touch-controls">
-        <div class="touch-row">
-            <button id="btn-pause" class="touch-btn btn-pause" aria-label="一時停止">⏸</button>
-            <button id="btn-rotate" class="touch-btn btn-rotate" aria-label="回転">↺</button>
-            <button id="btn-drop" class="touch-btn btn-drop" aria-label="急落下">⬇⬇</button>
+        <div class="control-group top-row">
+            <button id="btn-pause" class="modern-btn btn-util" aria-label="一時停止"><span>PAUSE</span></button>
+            <button id="btn-drop" class="modern-btn btn-drop-hard" aria-label="急落下"><span>HARD DROP</span></button>
         </div>
-        <div class="touch-row">
-            <button id="btn-left" class="touch-btn btn-move" aria-label="左移動">◀</button>
-            <button id="btn-down" class="touch-btn btn-move" aria-label="下移動">▼</button>
-            <button id="btn-right" class="touch-btn btn-move" aria-label="右移動">▶</button>
+        <div class="control-group bottom-row">
+            <button id="btn-rotate-left" class="modern-btn btn-action" aria-label="左回転"><i class="icon">↺</i></button>
+            <div class="move-btns">
+                <button id="btn-left" class="modern-btn btn-move" aria-label="左移動">◀</button>
+                <button id="btn-down" class="modern-btn btn-move" aria-label="下移動">▼</button>
+                <button id="btn-right" class="modern-btn btn-move" aria-label="右移動">▶</button>
+            </div>
+            <button id="btn-rotate-right" class="modern-btn btn-action" aria-label="右回転"><i class="icon">↻</i></button>
         </div>
     </div>
 

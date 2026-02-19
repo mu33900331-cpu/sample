@@ -25,9 +25,9 @@ class Piece {
         }
     }
 
-    // 時計回りに90度回転
-    rotateClockwise() {
-        this.rotation = (this.rotation + 1) % 4;
+    // 指定方向に回転 (1: 時計回り, -1: 反時計回り)
+    rotate(dir = 1) {
+        this.rotation = (this.rotation + dir + 4) % 4;
     }
 }
 
@@ -198,16 +198,32 @@ class Renderer {
         }
     }
 
-    // ボードと現在のアクティブピースを描画
-    drawBoard(activePiece) {
+    // ボードと現在のアクティブピース、およびゴーストを描画
+    drawBoard(activePiece, ghostPositions = null) {
         const activeCells = new Map();
         if (activePiece) {
             const positions = activePiece.getPositions();
             positions.forEach((pos, index) => {
                 if (pos.y >= 0 && pos.y < this.board.rows) {
-                    activeCells.set(pos.y * this.board.cols + pos.x, activePiece.colors[index]);
+                    activeCells.set(pos.y * this.board.cols + pos.x, {
+                        color: activePiece.colors[index],
+                        isGhost: false
+                    });
                 }
             });
+
+            // ゴーストの位置があればセット（アクティブピースと重ならない場合のみ）
+            if (ghostPositions) {
+                ghostPositions.forEach((pos, index) => {
+                    const idx = pos.y * this.board.cols + pos.x;
+                    if (pos.y >= 0 && pos.y < this.board.rows && !activeCells.has(idx)) {
+                        activeCells.set(idx, {
+                            color: activePiece.colors[index],
+                            isGhost: true
+                        });
+                    }
+                });
+            }
         }
 
         for (let y = 0; y < this.board.rows; y++) {
@@ -215,19 +231,28 @@ class Renderer {
                 const cellIndex = y * this.board.cols + x;
                 const cell = this.cells[cellIndex];
                 const boardColor = this.board.grid[y][x];
-                const activeColor = activeCells.get(cellIndex);
-                const color = activeColor !== undefined ? activeColor : boardColor;
+                const activeInfo = activeCells.get(cellIndex);
+
+                let color = boardColor;
+                let isGhost = false;
+                if (activeInfo) {
+                    color = activeInfo.color;
+                    isGhost = activeInfo.isGhost;
+                }
 
                 const currentType = cell.dataset.colorType || '0';
+                const currentGhost = cell.dataset.isGhost === 'true';
                 const newType = String(color);
-                if (currentType === newType) continue;
+
+                if (currentType === newType && currentGhost === isGhost) continue;
 
                 cell.dataset.colorType = newType;
+                cell.dataset.isGhost = String(isGhost);
                 cell.innerHTML = '';
 
                 if (color !== 0) {
                     const ball = document.createElement('div');
-                    ball.className = `ball type-${color}`;
+                    ball.className = `ball type-${color}${isGhost ? ' ghost' : ''}`;
                     cell.appendChild(ball);
                 }
             }
@@ -391,7 +416,7 @@ class Game {
         )) {
             this._gameOver();
         } else {
-            this.renderer.drawBoard(this.currentPiece);
+            this._drawPieceWithGhost();
         }
     }
 
@@ -424,7 +449,7 @@ class Game {
             this.currentPiece.y--;
             this._lockPiece();
         } else {
-            this.renderer.drawBoard(this.currentPiece);
+            this._drawPieceWithGhost();
         }
         this.dropCounter = 0;
     }
@@ -546,8 +571,13 @@ class Game {
                     this._softDrop();
                     break;
                 case 'ArrowUp':
+                case 'KeyX':
                     e.preventDefault();
-                    this._rotate();
+                    this._rotate(1); // 右回転
+                    break;
+                case 'KeyZ':
+                    e.preventDefault();
+                    this._rotate(-1); // 左回転
                     break;
             }
         });
@@ -619,25 +649,75 @@ class Game {
         bindBtn('btn-left', () => { if (this.isRunning && !this.isPaused && !this.isProcessing && this.currentPiece) this._move(-1); });
         bindBtn('btn-right', () => { if (this.isRunning && !this.isPaused && !this.isProcessing && this.currentPiece) this._move(1); });
         bindBtn('btn-down', () => { if (this.isRunning && !this.isPaused && !this.isProcessing && this.currentPiece) this._softDrop(); });
-        bindBtn('btn-rotate', () => { if (this.isRunning && !this.isPaused && !this.isProcessing && this.currentPiece) this._rotate(); });
+        bindBtn('btn-rotate-left', () => { if (this.isRunning && !this.isPaused && !this.isProcessing && this.currentPiece) this._rotate(-1); });
+        bindBtn('btn-rotate-right', () => { if (this.isRunning && !this.isPaused && !this.isProcessing && this.currentPiece) this._rotate(1); });
         bindBtn('btn-drop', () => { if (this.isRunning && !this.isPaused && !this.isProcessing && this.currentPiece) this._hardDrop(); });
         bindBtn('btn-pause', () => this.togglePause());
 
-        // ゲームボードのタップで回転（ゲーム中のみ）
+        // ゲームボードでの操作：左右スライドで移動、タップで回転
         let touchStartX = 0;
         let touchStartY = 0;
+        let lastGridX = -1; // 前回移動した際の列インデックス
+        let isDragging = false;
         const gameBoard = document.getElementById('game-board');
+
         gameBoard.addEventListener('touchstart', (e) => {
             touchStartX = e.touches[0].clientX;
             touchStartY = e.touches[0].clientY;
+            if (this.currentPiece) {
+                lastGridX = this.currentPiece.x;
+            }
+            isDragging = false;
         }, { passive: true });
+
+        gameBoard.addEventListener('touchmove', (e) => {
+            if (!this.isRunning || this.isPaused || this.isProcessing || !this.currentPiece) return;
+
+            const currentX = e.touches[0].clientX;
+            const currentY = e.touches[0].clientY;
+            const dx = currentX - touchStartX;
+            const dy = currentY - touchStartY;
+
+            // 一定以上動いたらドラッグとみなす
+            if (Math.abs(dx) > 10 || Math.abs(dy) > 10) {
+                isDragging = true;
+            }
+
+            if (isDragging) {
+                e.preventDefault();
+                // 画面幅と列数から、指の位置に対応する列を計算
+                const rect = gameBoard.getBoundingClientRect();
+                const boardWidth = rect.width;
+                const relativeX = currentX - rect.left;
+
+                // 相対位置から列(0〜5)を算出
+                let targetX = Math.floor((relativeX / boardWidth) * COLS);
+                // 範囲制限
+                targetX = Math.max(0, Math.min(COLS - 1, targetX));
+
+                // 列が変わったら移動を試みる
+                if (targetX !== this.currentPiece.x) {
+                    const diff = targetX - this.currentPiece.x;
+                    const step = diff > 0 ? 1 : -1;
+                    // 指の位置まで1マスずつ移動を試みる
+                    for (let i = 0; i < Math.abs(diff); i++) {
+                        this._move(step);
+                    }
+                }
+            }
+        }, { passive: false });
+
         gameBoard.addEventListener('touchend', (e) => {
+            if (!this.isRunning || this.isPaused || this.isProcessing || !this.currentPiece) return;
+
             const dx = e.changedTouches[0].clientX - touchStartX;
             const dy = e.changedTouches[0].clientY - touchStartY;
-            if (!this.isRunning || this.isPaused || this.isProcessing || !this.currentPiece) return;
-            if (Math.abs(dx) < 10 && Math.abs(dy) < 10) {
-                this._rotate();
+
+            // ドラッグしておらず、かつ動きが小さい場合はタップ（回転）とみなす
+            if (!isDragging && Math.abs(dx) < 10 && Math.abs(dy) < 10) {
+                this._rotate(1); // タップは右回転
             }
+            isDragging = false;
         }, { passive: true });
     }
 
@@ -652,43 +732,77 @@ class Game {
         )) {
             this.currentPiece.x -= dir;
         } else {
-            this.renderer.drawBoard(this.currentPiece);
+            this._drawPieceWithGhost();
         }
     }
 
     // 回転（壁に当たる場合は位置補正あり）
-    _rotate() {
+    _rotate(dir = 1) {
         if (!this.currentPiece) return;
         const originalRotation = this.currentPiece.rotation;
-        this.currentPiece.rotateClockwise();
+        const originalX = this.currentPiece.x;
+
+        this.currentPiece.rotate(dir);
 
         if (!this.board.isValidPosition(
             this.currentPiece.x,
             this.currentPiece.y,
             this.currentPiece.rotation
         )) {
-            // 左にずらして試みる（壁蹴り）
-            this.currentPiece.x--;
-            if (!this.board.isValidPosition(
-                this.currentPiece.x,
-                this.currentPiece.y,
-                this.currentPiece.rotation
-            )) {
-                // 右にずらして試みる
-                this.currentPiece.x += 2;
-                if (!this.board.isValidPosition(
+            // 壁蹴り: 1マス左右にずらして試みる
+            const kicks = [-1, 1, -2, 2];
+            let success = false;
+            for (const dx of kicks) {
+                this.currentPiece.x = originalX + dx;
+                if (this.board.isValidPosition(
                     this.currentPiece.x,
                     this.currentPiece.y,
                     this.currentPiece.rotation
                 )) {
-                    // 回転できない場合は元に戻す
-                    this.currentPiece.x--;
-                    this.currentPiece.rotation = originalRotation;
-                    return;
+                    success = true;
+                    break;
                 }
             }
+
+            if (!success) {
+                // 回転できない場合は元に戻す
+                this.currentPiece.x = originalX;
+                this.currentPiece.rotation = originalRotation;
+                return;
+            }
         }
-        this.renderer.drawBoard(this.currentPiece);
+        this._drawPieceWithGhost();
+    }
+
+    // ピースとゴーストを合わせて描画する
+    _drawPieceWithGhost() {
+        if (!this.currentPiece) {
+            this.renderer.drawBoard(null);
+            return;
+        }
+
+        // ゴーストの位置を計算
+        const ghostY = this._getGhostY();
+        const originalY = this.currentPiece.y;
+        this.currentPiece.y = ghostY;
+        const ghostPositions = this.currentPiece.getPositions();
+        this.currentPiece.y = originalY;
+
+        this.renderer.drawBoard(this.currentPiece, ghostPositions);
+    }
+
+    // ゴースト（落下予測地点）の Y 座標を取得
+    _getGhostY() {
+        if (!this.currentPiece) return 0;
+        let ghostY = this.currentPiece.y;
+        while (this.board.isValidPosition(
+            this.currentPiece.x,
+            ghostY + 1,
+            this.currentPiece.rotation
+        )) {
+            ghostY++;
+        }
+        return ghostY;
     }
 
     /**
