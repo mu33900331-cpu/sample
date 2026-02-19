@@ -325,58 +325,96 @@ body.touch-ui {
     }
 }
 
+/* ===== スマホ向けレスポンシブ（スクロールなし・全画面フィット） ===== */
+
+/* タッチデバイス判定でコントローラー表示・ヒント非表示 */
+@media (pointer: coarse) {
+    .touch-controls {
+        display: flex;
+    }
+
+    .controls-hint {
+        display: none;
+    }
+}
+
 /*
- * ===== スマホ縦向きレスポンシブレイアウト =====
- * 問題の原因：
- *   左サイドバー(80px) + gap(20px) + ゲームボード(192px) + gap(20px) + 右サイドバー(80px)
- *   + padding(40px) = 432px → iPhone画面幅(375〜390px)を超えてはみ出し、
- *   body の overflow:hidden によりゲームボードが完全に隠れていた。
- * 修正：縦並びレイアウトでサイドバーを上下の帯に変換する。
+ * max-width: 520px でモバイル専用レイアウトに切替。
+ * レイアウト構造:
+ *   [スコア/レベル 左50%] [NEXT 右50%]  ← 高さ56px の情報バー
+ *   [ゲームボード 全幅・中央]
+ *   [タッチコントロール fixed bottom 130px]
+ *
+ * セルサイズはJSが window.innerHeight から動的計算し --cell-size を上書きする。
  */
 @media (max-width: 520px) {
+
+    /* JSによる上書き前のフォールバック値 */
     :root {
-        /* 6列 × 40px = 240px → 余裕を持って画面内に収まる */
-        --cell-size: 40px;
+        --cell-size: 28px;
     }
 
-    body {
-        /* overflow:hidden を解除してスクロールを許可 */
-        overflow-x: hidden;
-        overflow-y: auto;
+    /* スクロール完全禁止・画面ぴったりフィット */
+    body,
+    body.touch-ui {
+        overflow: hidden !important;
+        height: 100vh;
         align-items: flex-start;
-        height: auto;
-        min-height: 100vh;
-        /* タッチコントローラー分の余白 */
-        padding-bottom: 170px;
+        padding: 0 !important;
     }
 
-    /* 縦並びに変更してゲームボードを中央に配置 */
+    /* flex-wrap で [左|右][ゲーム全幅] の2段に折り返す */
     .app-container {
-        flex-direction: column;
-        align-items: center;
-        gap: 8px;
-        padding: 8px;
+        flex-wrap: wrap;
+        align-content: flex-start;
+        gap: 4px;
+        padding: 4px;
+        width: 100%;
+        /* タッチコントロール(130px)分を除いた高さ */
+        height: calc(100vh - 130px);
+        overflow: hidden;
     }
 
-    /* 左サイドバー（スコア・レベル）を横帯として上部に表示 */
+    /* ===== 情報バー（上段）===== */
+
+    /* スコア/レベル：左 55% */
     .left-sidebar {
-        width: 100%;
-        max-width: calc(var(--cell-size) * 6 + 12px);
+        order: 1;
+        width: calc(55% - 2px);
         flex-direction: row;
-        justify-content: center;
-        gap: 12px;
+        gap: 4px;
+        height: 56px;
+        flex-shrink: 0;
     }
 
     .score-panel,
     .level-panel {
         flex: 1;
-        padding: 8px 12px;
+        padding: 4px 6px;
+        min-width: 0;
     }
 
-    /* 右サイドバー（NEXT）を横帯として下部に表示 */
+    .score-panel h2,
+    .level-panel h2 {
+        font-size: 0.7rem;
+        margin-bottom: 1px;
+    }
+
+    #score-display,
+    #level-display {
+        font-size: 1rem;
+    }
+
+    .controls-hint {
+        display: none;
+    }
+
+    /* NEXT：右 45% */
     .right-sidebar {
-        width: 100%;
-        max-width: calc(var(--cell-size) * 6 + 12px);
+        order: 2;
+        width: calc(45% - 2px);
+        height: 56px;
+        flex-shrink: 0;
     }
 
     .next-panel {
@@ -384,20 +422,57 @@ body.touch-ui {
         flex-direction: row;
         align-items: center;
         justify-content: center;
-        gap: 20px;
-        padding: 8px 15px;
+        gap: 10px;
+        padding: 4px 8px;
+        height: 100%;
     }
 
     .next-panel h2 {
+        font-size: 0.7rem;
         margin-bottom: 0;
+        flex-shrink: 0;
     }
 
     .next-piece-container {
         margin: 0;
+        transform: scale(0.65);
+        transform-origin: center;
     }
 
-    /* サイドバーの幅指定を上書き（横帯モードでは不要） */
+    .next-piece-container.small {
+        transform: scale(0.5);
+    }
+
+    /* ===== ゲームボード（下段・全幅中央）===== */
+    .game-container {
+        order: 3;
+        width: 100%;
+        display: flex;
+        justify-content: center;
+        align-items: flex-start;
+        flex: 1;
+        min-height: 0;
+    }
+
+    /* サイドバー幅の基本値をリセット */
     .sidebar {
         width: auto;
+    }
+
+    /* ===== タッチボタンを縮小して縦スペースを節約 ===== */
+    /* 合計高さ: 8(上pad) + 50 + 8(gap) + 50 + 14(下pad) = 130px */
+    .touch-controls {
+        padding: 8px 16px 14px;
+        gap: 8px;
+    }
+
+    .touch-btn {
+        width: 50px;
+        height: 50px;
+        font-size: 1.1rem;
+    }
+
+    .btn-drop {
+        font-size: 0.85rem;
     }
 }

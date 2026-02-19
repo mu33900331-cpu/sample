@@ -499,10 +499,13 @@ class Game {
     _gameOver() {
         this.isRunning = false;
         this.currentPiece = null;
+        const isMobile = window.matchMedia('(pointer: coarse)').matches;
         this.renderer.toggleOverlay(
             true,
             'GAME OVER',
-            `Score: ${this.score}\nSPACE / タップ でリトライ`
+            isMobile
+                ? `スコア: ${this.score}\nタップしてリトライ`
+                : `Score: ${this.score}  /  SPACE でリトライ`
         );
     }
 
@@ -552,9 +555,23 @@ class Game {
 
     // ===== タッチ操作の初期化（スマホ対応） =====
     _initTouchControls() {
+        const isMobile = window.matchMedia('(pointer: coarse)').matches;
+
         // タッチデバイスの場合はbodyにクラスを付与してレイアウト調整
-        if (window.matchMedia('(pointer: coarse)').matches) {
+        if (isMobile) {
             document.body.classList.add('touch-ui');
+
+            // スタート画面のテキストをタッチ向けに変更
+            const sub = document.getElementById('overlay-sub');
+            if (sub) sub.innerText = 'タップしてスタート';
+
+            // 一時停止画面のテキストをタッチ向けに変更
+            const pauseSub = document.querySelector('#pause-overlay p');
+            if (pauseSub) pauseSub.innerText = 'タップして再開';
+
+            // セルサイズを画面に合わせて計算
+            this._updateMobileCellSize();
+            window.addEventListener('resize', () => this._updateMobileCellSize());
         }
 
         // スタート/ゲームオーバー画面をタップしてゲーム開始
@@ -672,6 +689,24 @@ class Game {
             }
         }
         this.renderer.drawBoard(this.currentPiece);
+    }
+
+    /**
+     * スマホ向け：画面の高さに合わせて、スクロールが発生しない最適なセルサイズを計算・設定する
+     */
+    _updateMobileCellSize() {
+        const vh = window.innerHeight;
+        // 情報バー(56px) + コントローラー(130px) + 余白(16px) = 約200px を差し引く
+        const availableHeight = vh - 200;
+
+        // 12行分で割る
+        let cellSize = Math.floor(availableHeight / 12);
+
+        // 最小・最大制限（小さすぎると見えない、大きすぎるとはみ出す）
+        cellSize = Math.max(24, Math.min(cellSize, 45));
+
+        // CSS変数を更新
+        document.documentElement.style.setProperty('--cell-size', `${cellSize}px`);
     }
 }
 
